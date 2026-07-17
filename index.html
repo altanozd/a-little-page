@@ -793,6 +793,8 @@
     ctx.rotate(rotation);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = size * 0.7;
     ctx.beginPath();
     ctx.moveTo(0, size * 0.32);
     ctx.bezierCurveTo(size * 0.55, -size * 0.5, size * 1.2, size * 0.05, 0, size);
@@ -808,6 +810,8 @@
     ctx.rotate(rotation);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = size * 0.7;
     ctx.beginPath();
     for (var i = 0; i < 5; i++) {
       var outerAngle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
@@ -820,20 +824,20 @@
     ctx.restore();
   }
 
-  var count = 14;
+  var count = 20;
   var bits = [];
   function spawnBit() {
     return {
       x: Math.random() * W,
       y: Math.random() * H,
-      size: 6 + Math.random() * 8,
+      size: 8 + Math.random() * 11,
       vx: (Math.random() - 0.5) * 0.5,
       vy: (Math.random() - 0.5) * 0.5,
       bob: Math.random() * Math.PI * 2,
       bobSpeed: 0.01 + Math.random() * 0.015,
       rotation: Math.random() * Math.PI * 2,
       rotSpeed: (Math.random() - 0.5) * 0.02,
-      alpha: 0.14 + Math.random() * 0.16,
+      alpha: 0.28 + Math.random() * 0.32,
       color: palette[Math.floor(Math.random() * palette.length)],
       star: Math.random() < 0.35
     };
@@ -861,11 +865,11 @@
     }
   }
   boopBurstFn = spawnBurstWave;
-  function triggerBurst() {
-    var originX = W / 2;
-    var originY = H * 0.75;
-    [0, 220, 440].forEach(function (delay) {
-      setTimeout(function () { spawnBurstWave(originX, originY, 90); }, delay);
+  function triggerBurst(originX, originY) {
+    var ox = (typeof originX === "number") ? originX : W / 2;
+    var oy = (typeof originY === "number") ? originY : H * 0.75;
+    [0, 180, 360].forEach(function (delay) {
+      setTimeout(function () { spawnBurstWave(ox, oy, 90); }, delay);
     });
   }
 
@@ -1016,7 +1020,15 @@
     finale.classList.add("answered");
     playYesSound();
     buzz([20, 40, 20]);
-    if (!reduceMotion) triggerBurst();
+    if (!reduceMotion) {
+      var photoEl = document.querySelector(".final-photo");
+      if (photoEl) {
+        var r = photoEl.getBoundingClientRect();
+        triggerBurst(r.left + r.width / 2, r.top + r.height / 2);
+      } else {
+        triggerBurst();
+      }
+    }
   });
 })();
 </script>
