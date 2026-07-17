@@ -114,14 +114,29 @@
 
   /* ---------- Cover (wordless) ---------- */
   #cover { background: var(--pink); }
-  .mascot {
+  .mascot-wrap {
     width: min(46vw, 260px);
     animation: mascot-wiggle 2.6s ease-in-out infinite;
+    cursor: pointer;
   }
+  .mascot { width: 100%; display: block; }
+  .mascot.boop { animation: mascot-boop 0.4s ease; }
   @keyframes mascot-wiggle {
     0%, 100% { transform: rotate(-4deg) translateY(0); }
     50% { transform: rotate(4deg) translateY(-14px); }
   }
+  @keyframes mascot-boop {
+    0% { transform: scale(1, 1); }
+    30% { transform: scale(0.8, 1.2); }
+    60% { transform: scale(1.14, 0.88); }
+    100% { transform: scale(1, 1); }
+  }
+  .mascot-eye-l {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 0.15s ease;
+  }
+  .mascot-eye-l.wink { transform: scaleY(0.15); }
   .cover-wrap { display: flex; flex-direction: column; align-items: center; gap: 2.4rem; }
   .cover-chevron {
     width: 34px; height: 34px;
@@ -194,22 +209,23 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    width: 30px;
-    height: 30px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    background: #fff;
-    border: 3px solid var(--ink);
+    background: var(--yellow-pop);
+    border: 4px solid var(--ink);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--ink);
+    box-shadow: 3px 4px 0 var(--ink);
     z-index: 2;
     pointer-events: none;
-    animation: hint-pulse 2.2s ease-in-out infinite;
+    animation: hint-pulse 1.6s ease-in-out infinite;
   }
   @keyframes hint-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.28) rotate(-12deg); }
   }
 
   .caption-tag {
@@ -384,11 +400,42 @@
   .music-embed.open { display: block; }
   .music-embed iframe { display: block; width: 100%; border: 0; }
 
+  /* ---------- Progress dots ---------- */
+  .progress-dots {
+    position: fixed;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .progress-dots .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ink);
+    opacity: 0.22;
+    transform: scale(1);
+    transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease;
+  }
+  .progress-dots .dot.active {
+    opacity: 1;
+    background: var(--pink-pop);
+    transform: scale(1.6);
+  }
+  @media (max-width: 380px) {
+    .progress-dots { right: 8px; gap: 8px; }
+    .progress-dots .dot { width: 6px; height: 6px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .mascot, .cover-chevron, .post-content, .flip-hint, .gate-lock { animation: none; }
+    .mascot-wrap, .mascot.boop, .cover-chevron, .post-content, .flip-hint, .gate-lock { animation: none; }
     .photo-card, .finale-wrap { transition: opacity 0.4s ease; }
     .photo-card.is-visible, .finale-wrap.is-visible { transform: none; }
     .flip-inner { transition: none; }
+    .progress-dots .dot { transition: none; }
     .icon-btn { transition: background 0.2s ease; }
     html { scroll-behavior: auto; }
   }
@@ -415,15 +462,17 @@
 
   <section id="cover">
     <div class="cover-wrap">
-      <svg class="mascot" viewBox="0 0 200 190" fill="none" aria-hidden="true">
-        <path d="M100,178 C36,134 0,92 0,54 C0,20 28,0 58,0 C80,0 96,12 100,28 C104,12 120,0 142,0 C172,0 200,20 200,54 C200,92 164,134 100,178 Z"
-              fill="#fff" stroke="#2b2222" stroke-width="6" stroke-linejoin="round"/>
-        <ellipse cx="72" cy="66" rx="7" ry="10" fill="#2b2222"/>
-        <ellipse cx="128" cy="66" rx="7" ry="10" fill="#2b2222"/>
-        <ellipse cx="58" cy="86" rx="12" ry="7" fill="#ff9db3" opacity="0.75"/>
-        <ellipse cx="142" cy="86" rx="12" ry="7" fill="#ff9db3" opacity="0.75"/>
-        <path d="M88,92 Q100,104 112,92" stroke="#2b2222" stroke-width="5" stroke-linecap="round" fill="none"/>
-      </svg>
+      <div class="mascot-wrap" id="mascot-tap" role="button" tabindex="0" aria-label="Selam">
+        <svg class="mascot" id="mascot" viewBox="0 0 200 190" fill="none" aria-hidden="true">
+          <path d="M100,178 C36,134 0,92 0,54 C0,20 28,0 58,0 C80,0 96,12 100,28 C104,12 120,0 142,0 C172,0 200,20 200,54 C200,92 164,134 100,178 Z"
+                fill="#fff" stroke="#2b2222" stroke-width="6" stroke-linejoin="round"/>
+          <ellipse class="mascot-eye-l" cx="72" cy="66" rx="7" ry="10" fill="#2b2222"/>
+          <ellipse cx="128" cy="66" rx="7" ry="10" fill="#2b2222"/>
+          <ellipse cx="58" cy="86" rx="12" ry="7" fill="#ff9db3" opacity="0.75"/>
+          <ellipse cx="142" cy="86" rx="12" ry="7" fill="#ff9db3" opacity="0.75"/>
+          <path d="M88,92 Q100,104 112,92" stroke="#2b2222" stroke-width="5" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
       <svg class="cover-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3v15M5 12l7 7 7-7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -433,11 +482,11 @@
   <section class="photo-block" data-bg="pink">
     <div class="photo-card flip-card tilt-left reveal" role="button" tabindex="0">
       <span class="flip-hint" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <div class="flip-inner">
         <div class="flip-face flip-front"><img src="assets/photo-namnam.jpg" alt="" /></div>
-        <div class="flip-face flip-back">Seninle sürekli adalara gitmek istiyorum</div>
+        <div class="flip-face flip-back">Seninle beraber adalara gitmek istiyorum</div>
       </div>
       <span class="caption-tag">namnam</span>
     </div>
@@ -446,7 +495,7 @@
   <section class="photo-block" data-bg="mint">
     <div class="photo-card flip-card tilt-right reveal" role="button" tabindex="0">
       <span class="flip-hint" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <div class="flip-inner">
         <div class="flip-face flip-front"><img src="assets/photo-kutsandik.jpg" alt="" /></div>
@@ -459,26 +508,26 @@
   <section class="photo-block" data-bg="yellow">
     <div class="photo-card flip-card tilt-left reveal" role="button" tabindex="0">
       <span class="flip-hint" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <div class="flip-inner">
-        <div class="flip-face flip-front"><img src="assets/photo-sersem.jpg" alt="" /></div>
-        <div class="flip-face flip-back">Hera, literal çocuğumuz</div>
+        <div class="flip-face flip-front"><img src="assets/photo-konser.jpg" alt="" /></div>
+        <div class="flip-face flip-back">Seninle beraber konserlere gitmek istiyorum</div>
       </div>
-      <span class="caption-tag emoji-tag">😵‍💫</span>
+      <span class="caption-tag emoji-tag">🥰</span>
     </div>
   </section>
 
   <section class="photo-block" data-bg="lavender">
     <div class="photo-card flip-card tilt-right reveal" role="button" tabindex="0">
       <span class="flip-hint" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
       <div class="flip-inner">
-        <div class="flip-face flip-front"><img src="assets/photo-tatlikiz.jpg" alt="" /></div>
-        <div class="flip-face flip-back">Yicem seni</div>
+        <div class="flip-face flip-front"><img src="assets/photo-kalp.jpg" alt="" /></div>
+        <div class="flip-face flip-back">Seninle beraber yapmak istiyorum</div>
       </div>
-      <span class="caption-tag">Dünya en tatlı kız</span>
+      <span class="caption-tag emoji-tag">❤️</span>
     </div>
   </section>
 
@@ -522,6 +571,39 @@
   "use strict";
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  /* ---------- Sound + haptic feedback (synthesized, no audio files) ---------- */
+  var audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      try { audioCtx.resume(); } catch (e) {}
+    }
+    return audioCtx;
+  }
+  function playTone(freq, duration, type, delay) {
+    var ctx = ensureAudio();
+    if (!ctx) return;
+    var t0 = ctx.currentTime + (delay || 0);
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.12, t0 + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+  function playFlipSound() { playTone(520, 0.12, "triangle"); playTone(760, 0.1, "triangle", 0.05); }
+  function playBoopSound() { playTone(700, 0.09, "square"); }
+  function playYesSound() { playTone(660, 0.14, "sine"); playTone(880, 0.16, "sine", 0.08); playTone(1100, 0.2, "sine", 0.16); }
+  function buzz(pattern) {
+    if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+  }
+
   /* ---------- Password gate (deterrent only, not real security: this is a
      static page, so the HTML/assets are technically fetchable regardless) ---------- */
   var GATE_PASSWORD = "yağmurkalpaltan";
@@ -537,6 +619,8 @@
   function tryUnlock() {
     if (normalize(gateInput.value) === normalize(GATE_PASSWORD)) {
       gate.classList.add("unlocked");
+      playYesSound();
+      buzz(15);
       try { localStorage.setItem("yagmur-unlocked", "1"); } catch (e) {}
     } else {
       gateCard.classList.remove("shake");
@@ -559,7 +643,11 @@
 
   /* ---------- Flip cards ---------- */
   document.querySelectorAll(".flip-card").forEach(function (card) {
-    function toggleFlip() { card.classList.toggle("flipped"); }
+    function toggleFlip() {
+      card.classList.toggle("flipped");
+      playFlipSound();
+      buzz(12);
+    }
     card.addEventListener("click", toggleFlip);
     card.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") {
@@ -568,6 +656,38 @@
       }
     });
   });
+
+  /* ---------- Cover mascot easter egg ---------- */
+  var mascotTap = document.getElementById("mascot-tap");
+  var mascotEl = document.getElementById("mascot");
+  var mascotEye = mascotEl ? mascotEl.querySelector(".mascot-eye-l") : null;
+  if (mascotTap && mascotEl) {
+    var boopBurstFn = null; // wired up after the ambient canvas section defines spawnBurstWave
+    function mascotBoop() {
+      mascotEl.classList.remove("boop");
+      void mascotEl.offsetWidth;
+      mascotEl.classList.add("boop");
+      if (mascotEye) {
+        mascotEye.classList.remove("wink");
+        void mascotEye.offsetWidth;
+        mascotEye.classList.add("wink");
+        setTimeout(function () { mascotEye.classList.remove("wink"); }, 220);
+      }
+      playBoopSound();
+      buzz(10);
+      if (!reduceMotion && boopBurstFn) {
+        var rect = mascotTap.getBoundingClientRect();
+        boopBurstFn(rect.left + rect.width / 2, rect.top + rect.height / 2, 16);
+      }
+    }
+    mascotTap.addEventListener("click", mascotBoop);
+    mascotTap.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        mascotBoop();
+      }
+    });
+  }
 
   /* ---------- Day counter ---------- */
   var dayNumberEl = document.getElementById("day-number");
@@ -584,7 +704,7 @@
   var musicBtn = document.getElementById("music-toggle");
   var musicEmbed = document.getElementById("music-embed");
   var musicOpen = false;
-  var SPOTIFY_EMBED_SRC = "https://open.spotify.com/embed/track/545N3VnU7ZSBEUtdRGSUS9?utm_source=generator&theme=0";
+  var SPOTIFY_EMBED_SRC = "https://open.spotify.com/embed/track/545N3VnU7ZSBEUtdRGSUS9?utm_source=generator&theme=0&autoplay=1";
   if (musicBtn && musicEmbed) {
     musicBtn.addEventListener("click", function () {
       musicOpen = !musicOpen;
@@ -619,6 +739,32 @@
     revealTargets.forEach(function (el) { io.observe(el); });
   } else {
     revealTargets.forEach(function (el) { el.classList.add("is-visible"); });
+  }
+
+  /* ---------- Progress dots (wordless) ---------- */
+  var sections = document.querySelectorAll("main > section");
+  if (sections.length && "IntersectionObserver" in window) {
+    var dotsNav = document.createElement("nav");
+    dotsNav.className = "progress-dots";
+    dotsNav.setAttribute("aria-hidden", "true");
+    var dotEls = [];
+    sections.forEach(function () {
+      var d = document.createElement("span");
+      d.className = "dot";
+      dotsNav.appendChild(d);
+      dotEls.push(d);
+    });
+    document.body.appendChild(dotsNav);
+
+    var dotObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var idx = Array.prototype.indexOf.call(sections, entry.target);
+        if (entry.isIntersecting && idx !== -1) {
+          dotEls.forEach(function (d, i) { d.classList.toggle("active", i === idx); });
+        }
+      });
+    }, { threshold: 0.5 });
+    sections.forEach(function (s) { dotObserver.observe(s); });
   }
 
   /* ---------- Ambient bouncy stickers ---------- */
@@ -695,30 +841,31 @@
   for (var i = 0; i < count; i++) bits.push(spawnBit());
 
   var burst = [];
+  function spawnBurstWave(originX, originY, count, spread) {
+    for (var i = 0; i < count; i++) {
+      var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * (spread || 1.1);
+      var speed = 2.5 + Math.random() * 6.5;
+      burst.push({
+        x: originX + (Math.random() - 0.5) * 60,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 3 + Math.random() * 6,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.25,
+        life: 0,
+        maxLife: 80 + Math.random() * 70,
+        color: palette[Math.floor(Math.random() * palette.length)],
+        star: Math.random() < 0.25
+      });
+    }
+  }
+  boopBurstFn = spawnBurstWave;
   function triggerBurst() {
-    var waves = [0, 220, 440];
-    waves.forEach(function (delay) {
-      setTimeout(function () {
-        var originX = W / 2;
-        var originY = H * 0.75;
-        for (var i = 0; i < 90; i++) {
-          var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.1;
-          var speed = 2.5 + Math.random() * 6.5;
-          burst.push({
-            x: originX + (Math.random() - 0.5) * 60,
-            y: originY,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            size: 3 + Math.random() * 6,
-            rotation: Math.random() * Math.PI * 2,
-            rotSpeed: (Math.random() - 0.5) * 0.25,
-            life: 0,
-            maxLife: 80 + Math.random() * 70,
-            color: palette[Math.floor(Math.random() * palette.length)],
-            star: Math.random() < 0.25
-          });
-        }
-      }, delay);
+    var originX = W / 2;
+    var originY = H * 0.75;
+    [0, 220, 440].forEach(function (delay) {
+      setTimeout(function () { spawnBurstWave(originX, originY, 90); }, delay);
     });
   }
 
@@ -867,6 +1014,8 @@
 
   yesBtn.addEventListener("click", function () {
     finale.classList.add("answered");
+    playYesSound();
+    buzz([20, 40, 20]);
     if (!reduceMotion) triggerBurst();
   });
 })();
