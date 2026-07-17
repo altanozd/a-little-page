@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Yağmur</title>
+<style>
+  :root {
+    --ink: #2b2222;
+    --pink: #ffd6e0;
+    --pink-pop: #ff6f91;
+    --mint: #d3f5e0;
+    --mint-pop: #4fd68c;
+    --yellow: #fff3c4;
+    --yellow-pop: #ffc93c;
+    --lavender: #e9defc;
+    --lavender-pop: #b18cf5;
+    --peach: #ffe1cc;
+    --peach-pop: #ff8c5a;
+    --paper: #fffaf6;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Rounded", "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+
+  #gate {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--pink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6vw;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  #gate.unlocked { opacity: 0; visibility: hidden; pointer-events: none; }
+  .gate-card {
+    background: #fff;
+    border: 5px solid var(--ink);
+    border-radius: 28px;
+    padding: 2.4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.3rem;
+    box-shadow: 9px 11px 0 var(--ink);
+    width: min(88vw, 320px);
+  }
+  .gate-card.shake { animation: gate-shake 0.4s ease; }
+  @keyframes gate-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-9px); }
+    75% { transform: translateX(9px); }
+  }
+  .gate-lock { font-size: 2.6rem; animation: mascot-wiggle 2.6s ease-in-out infinite; }
+  .gate-row { display: flex; gap: 0.7rem; width: 100%; align-items: center; }
+  .gate-input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 800;
+    padding: 0.75rem 0.6rem;
+    border-radius: 16px;
+    border: 4px solid var(--ink);
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+  }
+  .gate-submit {
+    flex: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 5px solid var(--ink);
+    background: var(--pink-pop);
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 5px 6px 0 var(--ink);
+  }
+  .gate-submit:active { transform: translateY(2px); }
+
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  main { position: relative; z-index: 2; }
+
+  section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 8vh 6vw;
+  }
+
+  /* ---------- Cover (wordless) ---------- */
+  #cover { background: var(--pink); }
+  .mascot {
+    width: min(46vw, 260px);
+    animation: mascot-wiggle 2.6s ease-in-out infinite;
+  }
+  @keyframes mascot-wiggle {
+    0%, 100% { transform: rotate(-4deg) translateY(0); }
+    50% { transform: rotate(4deg) translateY(-14px); }
+  }
+  .cover-wrap { display: flex; flex-direction: column; align-items: center; gap: 2.4rem; }
+  .cover-chevron {
+    width: 34px; height: 34px;
+    color: var(--ink);
+    animation: chevron-bounce 1.6s ease-in-out infinite;
+  }
+  @keyframes chevron-bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.55; }
+    50% { transform: translateY(10px); opacity: 1; }
+  }
+
+  /* ---------- Photo sections ---------- */
+  .photo-block[data-bg="pink"] { background: var(--pink); }
+  .photo-block[data-bg="mint"] { background: var(--mint); }
+  .photo-block[data-bg="yellow"] { background: var(--yellow); }
+  .photo-block[data-bg="lavender"] { background: var(--lavender); }
+
+  .photo-card {
+    position: relative;
+    background: #fff;
+    border: 5px solid var(--ink);
+    border-radius: 28px;
+    padding: 14px;
+    width: min(88vw, 380px);
+    box-shadow: 9px 11px 0 var(--ink);
+    opacity: 0;
+    transform: scale(0.75) rotate(0deg);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  .photo-card.is-visible { opacity: 1; }
+  .photo-card.tilt-left.is-visible { transform: scale(1) rotate(-3deg); }
+  .photo-card.tilt-right.is-visible { transform: scale(1) rotate(3deg); }
+  .photo-card { perspective: 1200px; cursor: pointer; }
+
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    transition: transform 0.6s cubic-bezier(.34,1.56,.64,1);
+    transform-style: preserve-3d;
+  }
+  .photo-card.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    border: 2px solid var(--ink);
+    overflow: hidden;
+  }
+  .flip-front img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .flip-back {
+    transform: rotateY(180deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    text-align: center;
+    font-weight: 800;
+    line-height: 1.35;
+    font-size: clamp(1.05rem, 4.4vw, 1.4rem);
+  }
+  [data-bg="pink"] .flip-back { background: var(--pink-pop); color: #fff8f9; }
+  [data-bg="mint"] .flip-back { background: var(--mint-pop); color: #063; }
+  [data-bg="yellow"] .flip-back { background: var(--yellow-pop); color: #4a2e00; }
+  [data-bg="lavender"] .flip-back { background: var(--lavender-pop); color: #fdf9ff; }
+
+  .flip-hint {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    z-index: 2;
+    pointer-events: none;
+    animation: hint-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes hint-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  .caption-tag {
+    position: absolute;
+    left: 50%;
+    bottom: -26px;
+    transform: translateX(-50%) rotate(-3deg);
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    padding: 0.6rem 1.7rem;
+    font-weight: 800;
+    font-size: clamp(1.15rem, 3.4vw, 1.7rem);
+    box-shadow: 5px 6px 0 var(--ink);
+    white-space: nowrap;
+  }
+  [data-bg="pink"] .caption-tag { background: var(--pink-pop); color: #fff8f9; }
+  [data-bg="mint"] .caption-tag { background: var(--mint-pop); color: #063; }
+  [data-bg="yellow"] .caption-tag { background: var(--yellow-pop); color: #4a2e00; }
+  [data-bg="lavender"] .caption-tag { background: var(--lavender-pop); color: #fdf9ff; }
+  .caption-tag.emoji-tag { font-size: clamp(1.6rem, 5vw, 2.4rem); padding: 0.5rem 1.1rem; }
+
+  /* ---------- Finale ---------- */
+  #teklif { background: var(--peach); text-align: center; overflow: hidden; }
+  .finale-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(.34,1.56,.64,1);
+  }
+  .finale-wrap.is-visible { opacity: 1; transform: scale(1); }
+
+  .proposal-text {
+    font-size: clamp(1.9rem, 6.4vw, 3.4rem);
+    font-weight: 800;
+    max-width: 15ch;
+    line-height: 1.25;
+    text-shadow: 3px 3px 0 #fff5ec;
+  }
+
+  .decision-stage {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    min-height: clamp(260px, 48vh, 400px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2.4rem;
+  }
+
+  .icon-btn {
+    min-width: clamp(88px, 20vw, 112px);
+    padding: 0.9rem 1.2rem;
+    border-radius: 26px;
+    border: 5px solid var(--ink);
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    cursor: pointer;
+    box-shadow: 6px 7px 0 var(--ink);
+    transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), background 0.2s ease, left 0.14s ease-out, top 0.14s ease-out, box-shadow 0.15s ease;
+  }
+  .icon-btn:active { transform: translateY(3px); box-shadow: 3px 4px 0 var(--ink); }
+  .icon-emoji { font-size: clamp(1.9rem, 4.8vw, 2.4rem); line-height: 1; }
+  .icon-label { font-size: clamp(0.9rem, 2.6vw, 1.05rem); font-weight: 800; letter-spacing: 0.01em; }
+  #yes-btn {
+    background: var(--pink-pop);
+    color: #fff8f9;
+    transform: scale(var(--yes-scale, 1));
+  }
+  #yes-btn:hover { transform: scale(calc(var(--yes-scale, 1) * 1.1)) rotate(-6deg); }
+  #no-btn { background: var(--lavender); color: var(--ink); }
+
+  .pre-answer { display: flex; flex-direction: column; align-items: center; gap: 3rem; }
+  .finale.answered .pre-answer { display: none; }
+  .post-answer {
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .finale.answered .post-answer { display: flex; }
+  .post-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8rem;
+    animation: post-pop 0.7s cubic-bezier(.34,1.56,.64,1);
+  }
+  .post-text { color: var(--pink-pop); }
+  .final-photo {
+    width: min(78vw, 320px);
+    opacity: 1;
+    cursor: default;
+    transform: rotate(-2deg);
+  }
+  .final-photo img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 2px solid var(--ink);
+  }
+  @keyframes post-pop {
+    from { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .day-counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    border: 5px solid var(--ink);
+    border-radius: 26px;
+    padding: 0.8rem 1.8rem;
+    box-shadow: 6px 7px 0 var(--ink);
+    transform: rotate(2deg);
+  }
+  .day-number {
+    font-size: clamp(2rem, 7vw, 2.8rem);
+    font-weight: 800;
+    color: var(--peach-pop);
+    line-height: 1;
+  }
+  .day-label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    margin-top: 0.2rem;
+  }
+
+  /* ---------- Music toggle ---------- */
+  .music-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 6;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 4px solid var(--ink);
+    background: #fff;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 4px 5px 0 var(--ink);
+    transition: transform 0.2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .music-toggle:active { transform: translateY(2px); }
+  .music-embed {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(92vw, 360px);
+    z-index: 6;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 4px 6px 0 var(--ink);
+    display: none;
+  }
+  .music-embed.open { display: block; }
+  .music-embed iframe { display: block; width: 100%; border: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mascot, .cover-chevron, .post-content, .flip-hint, .gate-lock { animation: none; }
+    .photo-card, .finale-wrap { transition: opacity 0.4s ease; }
+    .photo-card.is-visible, .finale-wrap.is-visible { transform: none; }
+    .flip-inner { transition: none; }
+    .icon-btn { transition: background 0.2s ease; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gate" role="dialog" aria-modal="true">
+  <div class="gate-card" id="gate-card">
+    <span class="gate-lock" aria-hidden="true">🔒</span>
+    <div class="gate-row">
+      <input type="password" class="gate-input" id="gate-input" placeholder="şifre" autocomplete="off" autocapitalize="off" />
+      <button class="gate-submit" id="gate-submit" type="button" aria-label="Aç">➡️</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<button class="music-toggle" id="music-toggle" type="button" aria-label="Müzik">🎵</button>
+<div class="music-embed" id="music-embed" aria-hidden="true"></div>
+
+<main>
+
+  <section id="cover">
+    <div class="cover-wrap">
+      <svg class="mascot" viewBox="0 0 200 190" fill="none" aria-hidden="true">
+        <path d="M100,178 C36,134 0,92 0,54 C0,20 28,0 58,0 C80,0 96,12 100,28 C104,12 120,0 142,0 C172,0 200,20 200,54 C200,92 164,134 100,178 Z"
+              fill="#fff" stroke="#2b2222" stroke-width="6" stroke-linejoin="round"/>
+        <ellipse cx="72" cy="66" rx="7" ry="10" fill="#2b2222"/>
+        <ellipse cx="128" cy="66" rx="7" ry="10" fill="#2b2222"/>
+        <ellipse cx="58" cy="86" rx="12" ry="7" fill="#ff9db3" opacity="0.75"/>
+        <ellipse cx="142" cy="86" rx="12" ry="7" fill="#ff9db3" opacity="0.75"/>
+        <path d="M88,92 Q100,104 112,92" stroke="#2b2222" stroke-width="5" stroke-linecap="round" fill="none"/>
+      </svg>
+      <svg class="cover-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3v15M5 12l7 7 7-7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </section>
+
+  <section class="photo-block" data-bg="pink">
+    <div class="photo-card flip-card tilt-left reveal" role="button" tabindex="0">
+      <span class="flip-hint" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="flip-inner">
+        <div class="flip-face flip-front"><img src="assets/photo-namnam.jpg" alt="" /></div>
+        <div class="flip-face flip-back">Seninle sürekli adalara gitmek istiyorum</div>
+      </div>
+      <span class="caption-tag">namnam</span>
+    </div>
+  </section>
+
+  <section class="photo-block" data-bg="mint">
+    <div class="photo-card flip-card tilt-right reveal" role="button" tabindex="0">
+      <span class="flip-hint" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="flip-inner">
+        <div class="flip-face flip-front"><img src="assets/photo-kutsandik.jpg" alt="" /></div>
+        <div class="flip-face flip-back">Seninle beraber haçlara boğulmak istiyorum</div>
+      </div>
+      <span class="caption-tag">Kutsandık</span>
+    </div>
+  </section>
+
+  <section class="photo-block" data-bg="yellow">
+    <div class="photo-card flip-card tilt-left reveal" role="button" tabindex="0">
+      <span class="flip-hint" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="flip-inner">
+        <div class="flip-face flip-front"><img src="assets/photo-sersem.jpg" alt="" /></div>
+        <div class="flip-face flip-back">Hera, literal çocuğumuz</div>
+      </div>
+      <span class="caption-tag emoji-tag">😵‍💫</span>
+    </div>
+  </section>
+
+  <section class="photo-block" data-bg="lavender">
+    <div class="photo-card flip-card tilt-right reveal" role="button" tabindex="0">
+      <span class="flip-hint" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M4 4v5h5M20 20v-5h-5M5 15a7 7 0 0012.6 3.2M19 9A7 7 0 006.4 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="flip-inner">
+        <div class="flip-face flip-front"><img src="assets/photo-tatlikiz.jpg" alt="" /></div>
+        <div class="flip-face flip-back">Yicem seni</div>
+      </div>
+      <span class="caption-tag">Dünya en tatlı kız</span>
+    </div>
+  </section>
+
+  <section id="teklif" class="finale">
+    <div class="finale-wrap reveal">
+
+      <div class="pre-answer">
+        <h2 class="proposal-text">Benimle çıkar mısın Yağmur&lt;33333</h2>
+        <div class="decision-stage" id="stage">
+          <button class="icon-btn" id="yes-btn" type="button">
+            <span class="icon-emoji">❤️</span>
+            <span class="icon-label">Evet</span>
+          </button>
+          <button class="icon-btn" id="no-btn" type="button">
+            <span class="icon-emoji">🙈</span>
+            <span class="icon-label">Hayır</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="post-answer">
+        <div class="post-content">
+          <h2 class="proposal-text post-text">Seni çok seviyorum Yağmur</h2>
+          <div class="day-counter">
+            <span class="day-number" id="day-number">0</span>
+            <span class="day-label">GÜNDÜR BİRLİKTEYİZ</span>
+          </div>
+          <div class="photo-card final-photo">
+            <img src="assets/photo-final.jpg" alt="" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- Password gate (deterrent only, not real security: this is a
+     static page, so the HTML/assets are technically fetchable regardless) ---------- */
+  var GATE_PASSWORD = "yağmurkalpaltan";
+  var gate = document.getElementById("gate");
+  var gateInput = document.getElementById("gate-input");
+  var gateSubmit = document.getElementById("gate-submit");
+  var gateCard = document.getElementById("gate-card");
+
+  function normalize(s) {
+    return s.trim().toLocaleLowerCase("tr-TR");
+  }
+
+  function tryUnlock() {
+    if (normalize(gateInput.value) === normalize(GATE_PASSWORD)) {
+      gate.classList.add("unlocked");
+      try { localStorage.setItem("yagmur-unlocked", "1"); } catch (e) {}
+    } else {
+      gateCard.classList.remove("shake");
+      void gateCard.offsetWidth;
+      gateCard.classList.add("shake");
+      gateInput.value = "";
+      gateInput.focus();
+    }
+  }
+
+  if (gate && gateInput && gateSubmit) {
+    var alreadyUnlocked = false;
+    try { alreadyUnlocked = localStorage.getItem("yagmur-unlocked") === "1"; } catch (e) {}
+    if (alreadyUnlocked) gate.classList.add("unlocked");
+    gateSubmit.addEventListener("click", tryUnlock);
+    gateInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") tryUnlock();
+    });
+  }
+
+  /* ---------- Flip cards ---------- */
+  document.querySelectorAll(".flip-card").forEach(function (card) {
+    function toggleFlip() { card.classList.toggle("flipped"); }
+    card.addEventListener("click", toggleFlip);
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleFlip();
+      }
+    });
+  });
+
+  /* ---------- Day counter ---------- */
+  var dayNumberEl = document.getElementById("day-number");
+  if (dayNumberEl) {
+    var start = new Date(2025, 10, 30);
+    start.setHours(0, 0, 0, 0);
+    var now = new Date();
+    now.setHours(0, 0, 0, 0);
+    var days = Math.max(0, Math.round((now - start) / 86400000));
+    dayNumberEl.textContent = days;
+  }
+
+  /* ---------- Music toggle (Blood Orange - Wish) ---------- */
+  var musicBtn = document.getElementById("music-toggle");
+  var musicEmbed = document.getElementById("music-embed");
+  var musicOpen = false;
+  var SPOTIFY_EMBED_SRC = "https://open.spotify.com/embed/track/545N3VnU7ZSBEUtdRGSUS9?utm_source=generator&theme=0";
+  if (musicBtn && musicEmbed) {
+    musicBtn.addEventListener("click", function () {
+      musicOpen = !musicOpen;
+      if (musicOpen) {
+        musicEmbed.innerHTML = '<iframe src="' + SPOTIFY_EMBED_SRC + '" width="100%" height="152" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
+        musicEmbed.classList.add("open");
+        musicBtn.textContent = "🔊";
+      } else {
+        musicEmbed.innerHTML = "";
+        musicEmbed.classList.remove("open");
+        musicBtn.textContent = "🎵";
+      }
+    });
+  }
+
+  /* ---------- Scroll reveal ---------- */
+  var revealEls = document.querySelectorAll(".reveal");
+  var revealTargets = [];
+  revealEls.forEach(function (el) {
+    var target = el.classList.contains("finale-wrap") ? el : el;
+    revealTargets.push(target);
+  });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.25 });
+    revealTargets.forEach(function (el) { io.observe(el); });
+  } else {
+    revealTargets.forEach(function (el) { el.classList.add("is-visible"); });
+  }
+
+  /* ---------- Ambient bouncy stickers ---------- */
+  var canvas = document.getElementById("bg-canvas");
+  var ctx = canvas.getContext("2d");
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W, H;
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  var palette = ["#ff6f91", "#4fd68c", "#ffc93c", "#b18cf5"];
+
+  function drawHeart(x, y, size, rotation, color, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, size * 0.32);
+    ctx.bezierCurveTo(size * 0.55, -size * 0.5, size * 1.2, size * 0.05, 0, size);
+    ctx.bezierCurveTo(-size * 1.2, size * 0.05, -size * 0.55, -size * 0.5, 0, size * 0.32);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawStar(x, y, size, rotation, color, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for (var i = 0; i < 5; i++) {
+      var outerAngle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+      var innerAngle = outerAngle + Math.PI / 5;
+      ctx.lineTo(Math.cos(outerAngle) * size, Math.sin(outerAngle) * size);
+      ctx.lineTo(Math.cos(innerAngle) * size * 0.45, Math.sin(innerAngle) * size * 0.45);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  var count = 14;
+  var bits = [];
+  function spawnBit() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      size: 6 + Math.random() * 8,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      bob: Math.random() * Math.PI * 2,
+      bobSpeed: 0.01 + Math.random() * 0.015,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.02,
+      alpha: 0.14 + Math.random() * 0.16,
+      color: palette[Math.floor(Math.random() * palette.length)],
+      star: Math.random() < 0.35
+    };
+  }
+  for (var i = 0; i < count; i++) bits.push(spawnBit());
+
+  var burst = [];
+  function triggerBurst() {
+    var waves = [0, 220, 440];
+    waves.forEach(function (delay) {
+      setTimeout(function () {
+        var originX = W / 2;
+        var originY = H * 0.75;
+        for (var i = 0; i < 90; i++) {
+          var angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.1;
+          var speed = 2.5 + Math.random() * 6.5;
+          burst.push({
+            x: originX + (Math.random() - 0.5) * 60,
+            y: originY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: 3 + Math.random() * 6,
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.25,
+            life: 0,
+            maxLife: 80 + Math.random() * 70,
+            color: palette[Math.floor(Math.random() * palette.length)],
+            star: Math.random() < 0.25
+          });
+        }
+      }, delay);
+    });
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+
+    bits.forEach(function (p) {
+      p.bob += p.bobSpeed;
+      p.x += p.vx + Math.sin(p.bob) * 0.4;
+      p.y += p.vy + Math.cos(p.bob * 0.8) * 0.4;
+      p.rotation += p.rotSpeed;
+      if (p.x < -20) p.x = W + 20;
+      if (p.x > W + 20) p.x = -20;
+      if (p.y < -20) p.y = H + 20;
+      if (p.y > H + 20) p.y = -20;
+      if (p.star) drawStar(p.x, p.y, p.size, p.rotation, p.color, p.alpha);
+      else drawHeart(p.x, p.y, p.size, p.rotation, p.color, p.alpha);
+    });
+
+    for (var i = burst.length - 1; i >= 0; i--) {
+      var b = burst[i];
+      b.vy += 0.1;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.rotation += b.rotSpeed;
+      b.life++;
+      var alpha = Math.max(0, 1 - b.life / b.maxLife);
+      if (b.life >= b.maxLife) { burst.splice(i, 1); continue; }
+      if (b.star) drawStar(b.x, b.y, b.size, b.rotation, b.color, alpha * 0.9);
+      else drawHeart(b.x, b.y, b.size, b.rotation, b.color, alpha * 0.9);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  if (reduceMotion) {
+    bits.forEach(function (p) {
+      if (p.star) drawStar(p.x, p.y, p.size, p.rotation, p.color, p.alpha);
+      else drawHeart(p.x, p.y, p.size, p.rotation, p.color, p.alpha);
+    });
+  } else {
+    tick();
+  }
+
+  /* ---------- Decision stage: dodge + reveal ---------- */
+  var stage = document.getElementById("stage");
+  var noBtn = document.getElementById("no-btn");
+  var yesBtn = document.getElementById("yes-btn");
+  var finale = document.getElementById("teklif");
+
+  var freed = false;
+  var dodgeCount = 0;
+
+  function freeNoBtn() {
+    if (freed) return;
+    var sRect = stage.getBoundingClientRect();
+    var bRect = noBtn.getBoundingClientRect();
+    noBtn.style.position = "absolute";
+    noBtn.style.left = (bRect.left - sRect.left) + "px";
+    noBtn.style.top = (bRect.top - sRect.top) + "px";
+    noBtn.style.margin = "0";
+    freed = true;
+  }
+
+  // Picks a spot inside the stage that is as far as possible from (cx, cy)
+  // in page coordinates, so the button lands well outside the danger zone.
+  function farthestSpot(cx, cy) {
+    var sRect = stage.getBoundingClientRect();
+    var bRect = noBtn.getBoundingClientRect();
+    var maxX = Math.max(sRect.width - bRect.width - 8, 0);
+    var maxY = Math.max(sRect.height - bRect.height - 8, 0);
+    var best = null, bestDist = -1;
+    for (var i = 0; i < 16; i++) {
+      var x = Math.random() * maxX;
+      var y = Math.random() * maxY;
+      var centerX = sRect.left + x + bRect.width / 2;
+      var centerY = sRect.top + y + bRect.height / 2;
+      var d = Math.hypot(centerX - cx, centerY - cy);
+      if (d > bestDist) { bestDist = d; best = { x: x, y: y }; }
+    }
+    return best;
+  }
+
+  function dangerRadius() {
+    var bRect = noBtn.getBoundingClientRect();
+    return Math.max(bRect.width, bRect.height) / 2 + 110;
+  }
+
+  function isNear(cx, cy) {
+    var bRect = noBtn.getBoundingClientRect();
+    var centerX = bRect.left + bRect.width / 2;
+    var centerY = bRect.top + bRect.height / 2;
+    return Math.hypot(centerX - cx, centerY - cy) < dangerRadius();
+  }
+
+  function fleeFrom(cx, cy) {
+    if (finale.classList.contains("answered")) return;
+    freeNoBtn();
+    if (reduceMotion) noBtn.style.transition = "none";
+    var spot = farthestSpot(cx, cy);
+    if (!spot) return;
+    noBtn.style.left = spot.x + "px";
+    noBtn.style.top = spot.y + "px";
+
+    dodgeCount++;
+    var scale = Math.min(1 + dodgeCount * 0.03, 1.35);
+    stage.style.setProperty("--yes-scale", scale);
+  }
+
+  // Proactively repel the button before the cursor ever reaches it,
+  // instead of reacting to hover/click once it's already there.
+  var rafPending = false;
+  var lastX = 0, lastY = 0;
+  window.addEventListener("mousemove", function (e) {
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(function () {
+      rafPending = false;
+      if (isNear(lastX, lastY)) fleeFrom(lastX, lastY);
+    });
+  });
+
+  window.addEventListener("touchstart", function (e) {
+    var t = e.touches[0];
+    if (!t) return;
+    if (isNear(t.clientX, t.clientY)) {
+      e.preventDefault();
+      fleeFrom(t.clientX, t.clientY);
+    }
+  }, { passive: false });
+
+  window.addEventListener("touchmove", function (e) {
+    var t = e.touches[0];
+    if (!t) return;
+    if (isNear(t.clientX, t.clientY)) fleeFrom(t.clientX, t.clientY);
+  }, { passive: true });
+
+  // Safety net: should be unreachable in practice, but if a click ever
+  // lands on it anyway, it still does nothing but flee.
+  noBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    fleeFrom(e.clientX, e.clientY);
+  });
+
+  yesBtn.addEventListener("click", function () {
+    finale.classList.add("answered");
+    if (!reduceMotion) triggerBurst();
+  });
+})();
+</script>
+
+</body>
+</html>
