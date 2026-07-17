@@ -571,35 +571,7 @@
   "use strict";
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- Sound + haptic feedback (synthesized, no audio files) ---------- */
-  var audioCtx = null;
-  function ensureAudio() {
-    if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
-    }
-    if (audioCtx && audioCtx.state === "suspended") {
-      try { audioCtx.resume(); } catch (e) {}
-    }
-    return audioCtx;
-  }
-  function playTone(freq, duration, type, delay) {
-    var ctx = ensureAudio();
-    if (!ctx) return;
-    var t0 = ctx.currentTime + (delay || 0);
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = type || "sine";
-    osc.frequency.setValueAtTime(freq, t0);
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(0.12, t0 + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(t0);
-    osc.stop(t0 + duration + 0.02);
-  }
-  function playFlipSound() { playTone(520, 0.12, "triangle"); playTone(760, 0.1, "triangle", 0.05); }
-  function playBoopSound() { playTone(700, 0.09, "square"); }
-  function playYesSound() { playTone(660, 0.14, "sine"); playTone(880, 0.16, "sine", 0.08); playTone(1100, 0.2, "sine", 0.16); }
+  /* ---------- Haptic feedback ---------- */
   function buzz(pattern) {
     if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
   }
@@ -619,7 +591,6 @@
   function tryUnlock() {
     if (normalize(gateInput.value) === normalize(GATE_PASSWORD)) {
       gate.classList.add("unlocked");
-      playYesSound();
       buzz(15);
       try { localStorage.setItem("yagmur-unlocked", "1"); } catch (e) {}
     } else {
@@ -645,7 +616,6 @@
   document.querySelectorAll(".flip-card").forEach(function (card) {
     function toggleFlip() {
       card.classList.toggle("flipped");
-      playFlipSound();
       buzz(12);
     }
     card.addEventListener("click", toggleFlip);
@@ -673,7 +643,6 @@
         mascotEye.classList.add("wink");
         setTimeout(function () { mascotEye.classList.remove("wink"); }, 220);
       }
-      playBoopSound();
       buzz(10);
       if (!reduceMotion && boopBurstFn) {
         var rect = mascotTap.getBoundingClientRect();
@@ -687,6 +656,18 @@
         mascotBoop();
       }
     });
+
+    // A single subtle, self-triggered wink shortly after load hints that the
+    // mascot is tappable, without any label/text.
+    var mascotWasTapped = false;
+    mascotTap.addEventListener("click", function () { mascotWasTapped = true; });
+    if (!reduceMotion && mascotEye) {
+      setTimeout(function () {
+        if (mascotWasTapped) return;
+        mascotEye.classList.add("wink");
+        setTimeout(function () { mascotEye.classList.remove("wink"); }, 220);
+      }, 1800);
+    }
   }
 
   /* ---------- Day counter ---------- */
@@ -1018,7 +999,6 @@
 
   yesBtn.addEventListener("click", function () {
     finale.classList.add("answered");
-    playYesSound();
     buzz([20, 40, 20]);
     if (!reduceMotion) {
       var photoEl = document.querySelector(".final-photo");
